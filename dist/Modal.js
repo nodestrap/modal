@@ -258,23 +258,19 @@ export function ModalElement(props) {
     onExcitedChange, // not implemented
     ...restProps } = props;
     // jsx:
-    return (<Element 
-    // other props:
-    {...restProps} 
-    // accessibilities:
-    {...{
-        tabIndex,
-    }} 
-    // classes:
-    mainClass={props.mainClass ?? sheet.main} stateClasses={[...(props.stateClasses ?? []),
+    return (React.createElement(Element, { ...restProps, ...{
+            tabIndex,
+        }, 
+        // classes:
+        mainClass: props.mainClass ?? sheet.main, stateClasses: [...(props.stateClasses ?? []),
             excitedState.class,
-        ]} 
-    // events:
-    onAnimationEnd={(e) => {
+        ], 
+        // events:
+        onAnimationEnd: (e) => {
             props.onAnimationEnd?.(e);
             // states:
             excitedState.handleAnimationEnd(e);
-        }}/>);
+        } }));
 }
 export function Modal(props) {
     // styles:
@@ -323,23 +319,19 @@ export function Modal(props) {
         };
     }, [isNoBackInteractive, sheet.body]); // (re)run the setups on every time the no_back_interactive & sheet.body changes
     // jsx:
-    return (<Indicator 
-    // other props:
-    {...restProps} 
-    // semantics:
-    semanticTag={props.semanticTag ?? [null]} semanticRole={props.semanticRole ?? 'dialog'} aria-modal={props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)} 
-    // accessibilities:
-    {...{
-        active: activePassiveState.active,
-        inheritActive: false,
-    }} 
-    // classes:
-    mainClass={props.mainClass ?? sheet.main} variantClasses={[...(props.variantClasses ?? []),
+    return (React.createElement(Indicator, { ...restProps, 
+        // semantics:
+        semanticTag: props.semanticTag ?? [null], semanticRole: props.semanticRole ?? 'dialog', "aria-modal": props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined), ...{
+            active: activePassiveState.active,
+            inheritActive: false,
+        }, 
+        // classes:
+        mainClass: props.mainClass ?? sheet.main, variantClasses: [...(props.variantClasses ?? []),
             modalVariant.class,
-        ]} 
-    // events:
-    // watch left click on the overlay only (not at the ModalElement):
-    onClick={(e) => {
+        ], 
+        // events:
+        // watch left click on the overlay only (not at the ModalElement):
+        onClick: (e) => {
             props.onClick?.(e);
             if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
                 if (!e.defaultPrevented) {
@@ -356,9 +348,9 @@ export function Modal(props) {
                     } // if static
                 } // if
             } // if
-        }} 
-    // watch [escape key] on the whole Modal, including ModalElement & ModalElement's children:
-    onKeyUp={(e) => {
+        }, 
+        // watch [escape key] on the whole Modal, including ModalElement & ModalElement's children:
+        onKeyUp: (e) => {
             props.onKeyUp?.(e);
             if (!e.defaultPrevented) {
                 if ((e.key === 'Escape') || (e.code === 'Escape')) {
@@ -368,51 +360,47 @@ export function Modal(props) {
                     } // if
                 } // if
             } // if
-        }} onAnimationEnd={(e) => {
+        }, onAnimationEnd: (e) => {
             props.onAnimationEnd?.(e);
             // states:
             activePassiveState.handleAnimationEnd(e);
-        }}>
-            {isTypeOf(children, ModalElement)
-            ?
-                <children.type 
-                // other props:
-                {...children.props} 
+        } }, isTypeOf(children, ModalElement)
+        ?
+            React.createElement(children.type
+            // other props:
+            , { ...children.props, 
                 // essentials:
-                elmRef={(elm) => {
-                        setRef(children.props.elmRef, elm);
-                        setRef(elmRef, elm);
-                        setRef(childRef, elm);
-                    }} 
+                elmRef: (elm) => {
+                    setRef(children.props.elmRef, elm);
+                    setRef(elmRef, elm);
+                    setRef(childRef, elm);
+                }, 
                 // accessibilities:
-                tabIndex={tabIndex} excited={excitedFn} onExcitedChange={(newExcited) => {
-                        children.props.onExcitedChange?.(newExcited);
-                        onExcitedChange?.(newExcited);
-                        setExcitedDn(newExcited);
-                    }} 
+                tabIndex: tabIndex, excited: excitedFn, onExcitedChange: (newExcited) => {
+                    children.props.onExcitedChange?.(newExcited);
+                    onExcitedChange?.(newExcited);
+                    setExcitedDn(newExcited);
+                }, 
                 // events:
-                onActiveChange={(newActive, closeType) => {
-                        children.props.onActiveChange?.(newActive, closeType);
-                        onActiveChange?.(newActive, closeType);
-                    }}/>
-            :
-                <ModalElement 
+                onActiveChange: (newActive, closeType) => {
+                    children.props.onActiveChange?.(newActive, closeType);
+                    onActiveChange?.(newActive, closeType);
+                } })
+        :
+            React.createElement(ModalElement, { 
                 // essentials:
-                elmRef={(elm) => {
-                        setRef(elmRef, elm);
-                        setRef(childRef, elm);
-                    }} 
+                elmRef: (elm) => {
+                    setRef(elmRef, elm);
+                    setRef(childRef, elm);
+                }, 
                 // accessibilities:
-                tabIndex={tabIndex} excited={excitedFn} onExcitedChange={(newExcited) => {
-                        onExcitedChange?.(newExcited);
-                        setExcitedDn(newExcited);
-                    }} 
+                tabIndex: tabIndex, excited: excitedFn, onExcitedChange: (newExcited) => {
+                    onExcitedChange?.(newExcited);
+                    setExcitedDn(newExcited);
+                }, 
                 // events:
-                onActiveChange={(newActive, closeType) => {
-                        onActiveChange?.(newActive, closeType);
-                    }}>
-                    {children}
-                </ModalElement>}
-        </Indicator>);
+                onActiveChange: (newActive, closeType) => {
+                    onActiveChange?.(newActive, closeType);
+                } }, children)));
 }
 export { Modal as default };
