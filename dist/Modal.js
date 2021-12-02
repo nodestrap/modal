@@ -1,5 +1,5 @@
 // react:
-import { default as React, useState, useRef, useEffect, useLayoutEffect, } from 'react'; // base technology of our nodestrap components
+import { default as React, useState, useRef, useEffect, } from 'react'; // base technology of our nodestrap components
 import { 
 // compositions:
 composition, compositionOf, mainComposition, imports, 
@@ -15,6 +15,7 @@ import { createCssConfig,
 // utilities:
 usesGeneralProps, usesPrefixedProps, usesSuffixedProps, overwriteProps, } from '@cssfn/css-config'; // Stores & retrieves configuration using *css custom properties* (css variables)
 // nodestrap utilities:
+import { useIsomorphicLayoutEffect, } from '@nodestrap/hooks';
 import { stripoutFocusableElement, } from '@nodestrap/stripouts';
 import { 
 // utilities:
@@ -308,7 +309,7 @@ export function Modal(props) {
         // setups:
         childRef.current?.focus({ preventScroll: true }); // when actived => focus the ModalElement, so the user able to use [esc] key to close the modal
     }, [isVisible]); // (re)run the setups on every time the modal is shown
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         if (!isNoBackInteractive)
             return; // only for no_back_interactive mode
         // setups:
