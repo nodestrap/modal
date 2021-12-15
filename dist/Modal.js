@@ -108,7 +108,7 @@ export const useModalElementSheet = createUseSheet(() => [
             usesModalElementStates(),
         ]),
     ]),
-]);
+], /*sheetId :*/ 'u4teynvq1y'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
 export const usesModalLayout = () => {
     // dependencies:
     // animations:
@@ -212,7 +212,7 @@ export const useModalSheet = createUseSheet(() => [
             usesDocumentBodyLayout(),
         ]),
     ]),
-]);
+], /*sheetId :*/ 'z26pqrin5i'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
 // configs:
 export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
     //#region keyframes
