@@ -386,7 +386,9 @@ export function Modal(props) {
                 onActiveChange: (newActive, closeType) => {
                     children.props.onActiveChange?.(newActive, closeType);
                     onActiveChange?.(newActive, closeType);
-                } })
+                }, 
+                // children:
+                children: (!(props.lazy ?? false) || isVisible) && children.props.children })
         :
             React.createElement(ModalElement, { 
                 // essentials:
@@ -402,6 +404,6 @@ export function Modal(props) {
                 // events:
                 onActiveChange: (newActive, closeType) => {
                     onActiveChange?.(newActive, closeType);
-                } }, children)));
+                } }, (!(props.lazy ?? false) || isVisible) && props.children)));
 }
 export { Modal as default };

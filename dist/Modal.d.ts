@@ -56,6 +56,7 @@ export interface ModalElementProps<TElement extends HTMLElement = HTMLElement, T
 }
 export declare function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalElementProps<TElement, TCloseType>): JSX.Element;
 export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, ModalElementProps<TElement, TCloseType> {
+    lazy?: boolean;
 }
 export declare function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>): JSX.Element;
 export { Modal as default };
