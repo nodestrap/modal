@@ -2,11 +2,13 @@
 import { default as React, useState, useRef, useEffect, } from 'react'; // base technology of our nodestrap components
 import { 
 // compositions:
-composition, compositionOf, mainComposition, imports, 
-// layouts:
-layout, vars, children, 
+compositionOf, mainComposition, 
+// styles:
+style, vars, imports, 
 // rules:
-variants, states, rule, } from '@cssfn/cssfn'; // cssfn core
+rule, variants, states, 
+//combinators:
+children, } from '@cssfn/cssfn'; // cssfn core
 import { 
 // hooks:
 createUseSheet, } from '@cssfn/react-cssfn'; // cssfn for react
@@ -34,27 +36,27 @@ export const usesModalAnim = () => {
     // animations:
     const [anim, animRefs] = usesAnim();
     return [
-        () => composition([
-            imports([
+        () => style({
+            ...imports([
                 // animations:
                 anim(),
             ]),
-            vars({
+            ...vars({
                 [modalAnimDecls.anim]: animRefs.animNone,
             }),
-            states([
-                isActivating([
-                    vars({
+            ...states([
+                isActivating({
+                    ...vars({
                         [modalAnimDecls.anim]: cssProps.animActive,
                     }),
-                ]),
-                isPassivating([
-                    vars({
+                }),
+                isPassivating({
+                    ...vars({
                         [modalAnimDecls.anim]: cssProps.animPassive,
                     }),
-                ]),
+                }),
             ]),
-        ]),
+        }),
         modalAnimRefs,
         modalAnimDecls,
     ];
@@ -69,14 +71,14 @@ export const usesModalElementLayout = () => {
     // dependencies:
     // animations:
     const [anim, animRefs] = usesAnim();
-    return composition([
-        imports([
+    return style({
+        ...imports([
             // resets:
             stripoutFocusableElement(),
             // animations:
             anim(),
         ]),
-        layout({
+        ...style({
             // layouts:
             display: 'inline-block',
             // animations:
@@ -86,132 +88,112 @@ export const usesModalElementLayout = () => {
             // customize:
             ...usesGeneralProps(usesPrefixedProps(cssProps, 'element')), // apply general cssProps starting with element***
         }),
-    ]);
+    });
 };
 export const usesModalElementStates = () => {
     // dependencies:
     // states:
     const [excited] = usesExcitedState();
-    return composition([
-        imports([
+    return style({
+        ...imports([
             // states:
             excited(),
         ]),
-    ]);
+    });
 };
 export const useModalElementSheet = createUseSheet(() => [
-    mainComposition([
-        imports([
-            // layouts:
-            usesModalElementLayout(),
-            // states:
-            usesModalElementStates(),
-        ]),
-    ]),
+    mainComposition(imports([
+        // layouts:
+        usesModalElementLayout(),
+        // states:
+        usesModalElementStates(),
+    ])),
 ], /*sheetId :*/ 'u4teynvq1y'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
 export const usesModalLayout = () => {
     // dependencies:
     // animations:
     const [, modalAnimRefs] = usesModalAnim();
-    return composition([
-        layout({
-            // layouts:
-            display: 'block',
-            // sizes:
-            // fills the entire screen:
-            boxSizing: 'border-box',
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100vh',
-            // maxWidth     : 'fill-available', // hack to excluding scrollbar // not needed since all html pages are virtually full width
-            // maxHeight    : 'fill-available', // hack to excluding scrollbar // will be handle by javascript soon
-            // animations:
-            anim: modalAnimRefs.anim,
-            // customize:
-            ...usesGeneralProps(cssProps), // apply general cssProps
-        }),
-    ]);
+    return style({
+        // layouts:
+        display: 'block',
+        // sizes:
+        // fills the entire screen:
+        boxSizing: 'border-box',
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        // maxWidth     : 'fill-available', // hack to excluding scrollbar // not needed since all html pages are virtually full width
+        // maxHeight    : 'fill-available', // hack to excluding scrollbar // will be handle by javascript soon
+        // animations:
+        anim: modalAnimRefs.anim,
+        // customize:
+        ...usesGeneralProps(cssProps), // apply general cssProps
+    });
 };
 export const usesModalVariants = () => {
     // dependencies:
     // layouts:
-    const [sizes] = usesSizeVariant((sizeName) => composition([
-        layout({
-            // overwrites propName = propName{SizeName}:
-            ...overwriteProps(cssDecls, usesSuffixedProps(cssProps, sizeName)),
-        }),
-    ]));
-    return composition([
-        imports([
+    const [sizes] = usesSizeVariant((sizeName) => style({
+        // overwrites propName = propName{SizeName}:
+        ...overwriteProps(cssDecls, usesSuffixedProps(cssProps, sizeName)),
+    }));
+    return style({
+        ...imports([
             // layouts:
             sizes(),
         ]),
-        variants([
-            rule('.hidden', [
-                layout({
-                    background: 'none',
-                }),
-            ]),
-            rule(['.hidden', '.interactive'], [
-                layout({
+        ...variants([
+            rule('.hidden', {
+                background: 'none',
+            }),
+            rule(['.hidden', '.interactive'], {
+                // accessibilities:
+                pointerEvents: 'none',
+                // children:
+                ...children('*', {
                     // accessibilities:
-                    pointerEvents: 'none',
-                    // children:
-                    ...children('*', [
-                        layout({
-                            // accessibilities:
-                            pointerEvents: 'initial',
-                        }),
-                    ]),
+                    pointerEvents: 'initial',
                 }),
-            ]),
+            }),
         ]),
-    ]);
+    });
 };
 export const usesModalStates = () => {
     // dependencies:
     // animations:
     const [modalAnim] = usesModalAnim();
-    return composition([
-        imports([
+    return style({
+        ...imports([
             // animations:
             modalAnim(),
         ]),
-        states([
-            isPassived([
-                layout({
-                    // appearances:
-                    display: 'none', // hide the modal
-                }),
-            ]),
+        ...states([
+            isPassived({
+                // appearances:
+                display: 'none', // hide the modal
+            }),
         ]),
-    ]);
+    });
 };
 export const usesDocumentBodyLayout = () => {
-    return composition([
-        layout({
-            // kill the scroll on the body:
-            overflow: 'hidden',
-        }),
-    ]);
+    return style({
+        // kill the scroll on the body:
+        overflow: 'hidden',
+    });
 };
 export const useModalSheet = createUseSheet(() => [
-    mainComposition([
-        imports([
-            // layouts:
-            usesModalLayout(),
-            // variants:
-            usesModalVariants(),
-            // states:
-            usesModalStates(),
-        ]),
-    ]),
-    compositionOf('body', [
-        imports([
-            usesDocumentBodyLayout(),
-        ]),
-    ]),
+    mainComposition(imports([
+        // layouts:
+        usesModalLayout(),
+        // variants:
+        usesModalVariants(),
+        // states:
+        usesModalStates(),
+    ])),
+    compositionOf('body', imports([
+        usesDocumentBodyLayout(),
+    ])),
 ], /*sheetId :*/ 'z26pqrin5i'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
 // configs:
 export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
@@ -256,8 +238,7 @@ export function ModalElement(props) {
     tabIndex = -1, 
     // actions:
     onActiveChange, // not implemented
-    onExcitedChange, // not implemented
-    ...restProps } = props;
+    onExcitedChange, ...restProps } = props;
     // jsx:
     return (React.createElement(Element, { ...restProps, ...{
             tabIndex,

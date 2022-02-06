@@ -9,7 +9,7 @@ export interface ModalAnimVars {
      */
     anim: any;
 }
-export declare const usesModalAnim: () => readonly [() => import("@cssfn/cssfn").StyleCollection, import("@cssfn/css-var").ReadonlyRefs<ModalAnimVars>, import("@cssfn/css-var").ReadonlyDecls<ModalAnimVars>];
+export declare const usesModalAnim: () => readonly [() => import("@cssfn/cssfn").Rule, import("@cssfn/css-var").ReadonlyRefs<ModalAnimVars>, import("@cssfn/css-var").ReadonlyDecls<ModalAnimVars>];
 export declare type ModalStyle = 'hidden' | 'interactive' | 'static';
 export interface ModalVariant {
     modalStyle?: ModalStyle;
@@ -17,13 +17,13 @@ export interface ModalVariant {
 export declare const useModalVariant: (props: ModalVariant) => {
     class: ModalStyle | null;
 };
-export declare const usesModalElementLayout: () => import("@cssfn/cssfn").StyleCollection;
-export declare const usesModalElementStates: () => import("@cssfn/cssfn").StyleCollection;
+export declare const usesModalElementLayout: () => import("@cssfn/cssfn").Rule;
+export declare const usesModalElementStates: () => import("@cssfn/cssfn").Rule;
 export declare const useModalElementSheet: import("@cssfn/types").Factory<import("jss").Classes<"main">>;
-export declare const usesModalLayout: () => import("@cssfn/cssfn").StyleCollection;
-export declare const usesModalVariants: () => import("@cssfn/cssfn").StyleCollection;
-export declare const usesModalStates: () => import("@cssfn/cssfn").StyleCollection;
-export declare const usesDocumentBodyLayout: () => import("@cssfn/cssfn").StyleCollection;
+export declare const usesModalLayout: () => import("@cssfn/cssfn").Rule;
+export declare const usesModalVariants: () => import("@cssfn/cssfn").Rule;
+export declare const usesModalStates: () => import("@cssfn/cssfn").Rule;
+export declare const usesDocumentBodyLayout: () => import("@cssfn/cssfn").Rule;
 export declare const useModalSheet: import("@cssfn/types").Factory<import("jss").Classes<"main" | "body">>;
 export declare const cssProps: import("@cssfn/css-config").Refs<{
     backg: string;
