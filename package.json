@@ -1,6 +1,6 @@
 {
   "name": "@nodestrap/modal",
-  "version": "4.0.7",
+  "version": "4.0.8",
   "description": "Overlays a dialog on site page.",
   "type": "module",
   "main": "dist/Modal.js",
@@ -43,6 +43,8 @@
     "@nodestrap/stripouts": "^4.0.3",
     "@nodestrap/utilities": "^4.0.3",
     "@types/react": "^17.0.43",
-    "react": "^17.0.2"
+    "@types/react-dom": "^17.0.14",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }

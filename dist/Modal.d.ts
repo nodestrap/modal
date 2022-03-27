@@ -61,5 +61,5 @@ export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseTy
     lazy?: boolean;
     dialog?: React.ReactComponentElement<any, ElementProps>;
 }
-export declare function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>): JSX.Element;
+export declare function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>): React.ReactPortal;
 export { Modal as default };

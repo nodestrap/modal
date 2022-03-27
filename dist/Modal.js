@@ -1,5 +1,6 @@
 // react:
 import { default as React, useState, useRef, useEffect, } from 'react'; // base technology of our nodestrap components
+import { createPortal, } from 'react-dom';
 import { 
 // compositions:
 compositionOf, mainComposition, 
@@ -308,6 +309,15 @@ export function Modal(props) {
     // fn props:
     const excitedFn = excited ?? excitedDn;
     // dom effects:
+    const [containerRef] = useState(() => document.createElement('div'));
+    useIsomorphicLayoutEffect(() => {
+        // setups:
+        document.body.appendChild(containerRef);
+        // cleanups:
+        return () => {
+            containerRef.parentElement?.removeChild(containerRef);
+        };
+    }, []); // runs once at startup
     const childRef = useRef(null);
     useEffect(() => {
         if (!isVisible)
@@ -367,7 +377,7 @@ export function Modal(props) {
         active: isActive,
         inheritActive: false,
     };
-    return (React.createElement(Indicator, { ...restBackdropProps, 
+    return createPortal(React.createElement(Indicator, { ...restBackdropProps, 
         // accessibilities:
         active: isActive, inheritActive: false, 
         // classes:
@@ -409,6 +419,6 @@ export function Modal(props) {
             props.onAnimationEnd?.(e);
             // states:
             activePassiveState.handleAnimationEnd(e);
-        } }, React.cloneElement(React.cloneElement(dialog, defaultDialogProps, ((!lazy || isVisible) && children)), dialog.props)));
+        } }, React.cloneElement(React.cloneElement(dialog, defaultDialogProps, ((!lazy || isVisible) && children)), dialog.props)), containerRef);
 }
 export { Modal as default };
