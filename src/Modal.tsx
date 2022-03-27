@@ -59,10 +59,10 @@ import {
 }                           from '@nodestrap/hooks'
 import {
     stripoutFocusableElement,
+    stripoutDialog,
 }                           from '@nodestrap/stripouts'
 import {
     // utilities:
-    isTypeOf,
     setRef,
 }                           from '@nodestrap/utilities'
 
@@ -148,20 +148,20 @@ export const usesModalAnim = () => {
 
 // appearances:
 
-export type ModalStyle = 'hidden'|'interactive'|'static' // might be added more styles in the future
-export interface ModalVariant {
-    modalStyle? : ModalStyle
+export type BackdropStyle = 'hidden'|'interactive'|'static' // might be added more styles in the future
+export interface BackdropVariant {
+    backdropStyle? : BackdropStyle
 }
-export const useModalVariant = (props: ModalVariant) => {
+export const useModalVariant = ({ backdropStyle }: BackdropVariant) => {
     return {
-        class : props.modalStyle ? props.modalStyle : null,
+        class : backdropStyle ? backdropStyle : null,
     };
 };
 
 
 
 // styles:
-export const usesModalElementLayout = () => {
+export const usesDialogLayout = () => {
     // dependencies:
     
     // animations:
@@ -173,20 +173,27 @@ export const usesModalElementLayout = () => {
         ...imports([
             // resets:
             stripoutFocusableElement(), // clear browser's default styles
+            stripoutDialog(),           // clear browser's default styles
             
             // animations:
             anim(),
         ]),
         ...style({
             // layouts:
-            display : 'inline-block',
+            display    : 'block',
+            
+            
+            
+            // sizes:
+            inlineSize : 'fit-content',
+            blockSize  : 'fit-content',
             
             
             
             // animations:
-            boxShadow : animRefs.boxShadow,
-            filter    : animRefs.filter,
-            anim      : animRefs.anim,
+            boxShadow  : animRefs.boxShadow,
+            filter     : animRefs.filter,
+            anim       : animRefs.anim,
             
             
             
@@ -195,7 +202,7 @@ export const usesModalElementLayout = () => {
         }),
     });
 };
-export const usesModalElementStates = () => {
+export const usesDialogStates = () => {
     // dependencies:
     
     // states:
@@ -211,21 +218,21 @@ export const usesModalElementStates = () => {
     });
 };
 
-export const useModalElementSheet = createUseSheet(() => [
+export const useDialogSheet = createUseSheet(() => [
     mainComposition(
         imports([
             // layouts:
-            usesModalElementLayout(),
+            usesDialogLayout(),
             
             // states:
-            usesModalElementStates(),
+            usesDialogStates(),
         ]),
     ),
 ], /*sheetId :*/'u4teynvq1y'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
 
 
 
-export const usesModalLayout = () => {
+export const usesBackdropLayout = () => {
     // dependencies:
     
     // animations:
@@ -234,20 +241,25 @@ export const usesModalLayout = () => {
     
     
     return style({
+        // positions:
+        position     : 'fixed',
+        inset        : 0,
+        
+        
+        
         // layouts:
-        display      : 'block',
+        display      : 'grid',
+        
+        // child default sizes:
+        justifyItems : 'center', // center horizontally
+        alignItems   : 'center', // center vertically
         
         
         
         // sizes:
         // fills the entire screen:
         boxSizing    : 'border-box', // the final size is including borders & paddings
-        position     : 'fixed',
-        inset        : 0,
-        width        : '100vw',
-        height       : '100vh',
-     // maxWidth     : 'fill-available', // hack to excluding scrollbar // not needed since all html pages are virtually full width
-     // maxHeight    : 'fill-available', // hack to excluding scrollbar // will be handle by javascript soon
+        minBlockSize : '100vh',
         
         
         
@@ -260,7 +272,7 @@ export const usesModalLayout = () => {
         ...usesGeneralProps(cssProps), // apply general cssProps
     });
 };
-export const usesModalVariants = () => {
+export const usesBackdropVariants = () => {
     // dependencies:
     
     // layouts:
@@ -287,7 +299,7 @@ export const usesModalVariants = () => {
                 
                 
                 // children:
-                ...children('*', { // ModalElement
+                ...children('*', { // <Dialog>
                     // accessibilities:
                     pointerEvents : 'initial',
                 }),
@@ -295,7 +307,7 @@ export const usesModalVariants = () => {
         ]),
     });
 };
-export const usesModalStates = () => {
+export const usesBackdropStates = () => {
     // dependencies:
     
     // animations:
@@ -324,17 +336,17 @@ export const usesDocumentBodyLayout = () => {
     });
 };
 
-export const useModalSheet = createUseSheet(() => [
+export const useBackdropSheet = createUseSheet(() => [
     mainComposition(
         imports([
             // layouts:
-            usesModalLayout(),
+            usesBackdropLayout(),
             
             // variants:
-            usesModalVariants(),
+            usesBackdropVariants(),
             
             // states:
-            usesModalStates(),
+            usesBackdropStates(),
         ]),
     ),
     compositionOf('body',
@@ -398,23 +410,22 @@ export interface ModalAction<TCloseType = ModalCloseType>
 
 
 
-export interface ModalElementProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>
+export interface DialogProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>
     extends
         ModalAction<TCloseType>,
-        ElementProps<TElement>,
+        IndicatorProps<TElement>,
         
         // states:
-        TogglerExcitedProps,
-        
-        // appearances:
-        ModalVariant
+        TogglerExcitedProps
 {
     // accessibilities:
-    tabIndex? : number
+    isModal?   : boolean
+    isVisible? : boolean
+    tabIndex?  : number
 }
-export function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalElementProps<TElement, TCloseType>) {
+export function Dialog<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: DialogProps<TElement, TCloseType>) {
     // styles:
-    const sheet        = useModalElementSheet();
+    const sheet        = useDialogSheet();
     
     
     
@@ -426,12 +437,14 @@ export function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseT
     // rest props:
     const {
         // accessibilities:
+        isModal,
+        isVisible,
         tabIndex = -1,
         
         
         // actions:
         onActiveChange,  // not implemented
-        onExcitedChange,
+        onExcitedChange, // not implemented
     ...restProps} = props;
     
     
@@ -441,6 +454,15 @@ export function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseT
         <Element<TElement>
             // other props:
             {...restProps}
+            
+            
+            // semantics:
+            semanticTag ={props.semanticTag   ?? 'dialog'}
+            semanticRole={props.semanticRole  ?? 'dialog'}
+            aria-modal={isModal}
+            {...{
+                open : isVisible,
+            }}
             
             
             // accessibilities:
@@ -474,13 +496,21 @@ export function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseT
 export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>
     extends
         IndicatorProps<TElement>,
-        ModalElementProps<TElement, TCloseType>
+        Omit<DialogProps<TElement, TCloseType>, 'isModal'|'isVisible'>,
+        
+        // appearances:
+        BackdropVariant
 {
-    lazy? : boolean
+    // performances:
+    lazy?   : boolean
+    
+    
+    // components:
+    dialog? : React.ReactComponentElement<any, ElementProps>
 }
 export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>) {
     // styles:
-    const sheet                     = useModalSheet();
+    const sheet                     = useBackdropSheet();
     
     
     
@@ -497,15 +527,13 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     // rest props:
     const {
         // essentials:
-        elmRef,        // moved to ModalElement
+        elmRef,        // moved to <Dialog>
         
         
         // accessibilities:
-        enabled,        // from accessibilities, not implemented
-        inheritEnabled, // from accessibilities, not implemented
         active,         // from accessibilities
         inheritActive,  // from accessibilities
-        tabIndex,       // from Modal, moved to ModalElement
+        tabIndex,       // from Modal, moved to <Dialog>
         
         excited,
         onExcitedChange,
@@ -515,15 +543,46 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         onActiveChange,
         
         
+        // performances:
+        lazy = false,
+        
+        
+        // components:
+        dialog = <Dialog<TElement, TCloseType> />,
+        
+        
         // children:
         children,
-    ...restProps} = props;
+    ...restBackdropProps} = props;
+    const {
+        // layouts:
+        size,
+        // orientation,
+        nude,
+        
+        
+        // colors:
+        theme,
+        gradient,
+        outlined,
+        mild,
+        
+        
+        // <Indicator> states:
+        enabled,
+        inheritEnabled,
+        readOnly,
+        inheritReadOnly,
+        // active,
+        // inheritActive,
+    } = restBackdropProps;
     
     
     
     // states:
     const activePassiveState        = useActivePassiveState({ active, inheritActive: false });
-    const isVisible                 = activePassiveState.active || (!!activePassiveState.class);
+    const isActive                  = activePassiveState.active;
+    const isVisible                 = isActive || (!!activePassiveState.class);
     const isNoBackInteractive       = isVisible && ((modalVariant.class !== 'hidden') && (modalVariant.class !== 'interactive'));
     
     
@@ -542,7 +601,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         
         
         // setups:
-        childRef.current?.focus({ preventScroll: true }); // when actived => focus the ModalElement, so the user able to use [esc] key to close the modal
+        childRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
     }, [isVisible]); // (re)run the setups on every time the modal is shown
     
     useIsomorphicLayoutEffect(() => {
@@ -564,24 +623,66 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     
     // jsx:
+    const defaultDialogProps : DialogProps<TElement, TCloseType> = {
+        // essentials:
+        elmRef          : (elm) => {
+            if (dialog.props.elmRef) setRef(dialog.props.elmRef, elm);
+            
+            setRef(elmRef, elm);
+            setRef(childRef, elm);
+        },
+        
+        
+        // accessibilities:
+        isModal         : !!(props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)),
+        isVisible       : isVisible,
+        tabIndex        : tabIndex,
+        excited         : excitedFn,
+        onExcitedChange : (newExcited) => {
+            dialog.props.onExcitedChange?.(newExcited);
+            
+            onExcitedChange?.(newExcited);
+            setExcitedDn(newExcited);
+        },
+        
+        
+        // actions:
+        onActiveChange  : (newActive, closeType) => {
+            dialog.props.onActiveChange?.(newActive, closeType);
+            
+            onActiveChange?.(newActive, closeType);
+        },
+        
+        
+        // variants:
+        // layouts:
+        size        : size,
+        // orientation : orientation,
+        nude        : nude,
+        // colors:
+        theme       : theme,
+        gradient    : gradient,
+        outlined    : outlined,
+        mild        : mild,
+        
+        
+        // <Indicator> states:
+        enabled         : enabled,
+        inheritEnabled  : inheritEnabled,
+        readOnly        : readOnly,
+        inheritReadOnly : inheritReadOnly,
+        active          : isActive,
+        inheritActive   : false,
+    };
     return (
         <Indicator<TElement>
             // other props:
-            {...restProps}
-            
-            
-            // semantics:
-            semanticTag ={props.semanticTag  ?? [null]  }
-            semanticRole={props.semanticRole ?? 'dialog'}
-            
-            aria-modal={props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)}
+            {...restBackdropProps}
             
             
             // accessibilities:
-            {...{
-                active        : activePassiveState.active,
-                inheritActive : false,
-            }}
+            active       ={isActive}
+            inheritActive={false}
             
             
             // classes:
@@ -592,7 +693,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
             
             
             // events:
-            // watch left click on the overlay only (not at the ModalElement):
+            // watch left click on the overlay only (not at the <Dialog>):
             onClick={(e) => {
                 props.onClick?.(e);
                 
@@ -600,7 +701,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
                 
                 if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
                     if (!e.defaultPrevented) {
-                        if (props.modalStyle !== 'static') {
+                        if (props.backdropStyle !== 'static') {
                             if (onActiveChange) {
                                 onActiveChange(false, 'overlay' as unknown as TCloseType);
                                 e.preventDefault();
@@ -608,14 +709,14 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
                         }
                         else {
                             setExcitedDn(true);
-                            childRef.current?.focus({ preventScroll: true }); // re-focus to the ModalElement, so the user able to use [esc] key to close the Modal
+                            childRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
                             e.preventDefault();
                         } // if static
                     } // if
                 } // if
             }}
             
-            // watch [escape key] on the whole Modal, including ModalElement & ModalElement's children:
+            // watch [escape key] on the whole Modal, including <Dialog> & <Dialog>'s children:
             onKeyUp={(e) => {
                 props.onKeyUp?.(e);
                 
@@ -640,74 +741,9 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
                 activePassiveState.handleAnimationEnd(e);
             }}
         >
-            {
-                isTypeOf<ModalElementProps<TElement, TCloseType>>(children, ModalElement)
-                ?
-                <children.type
-                    // other props:
-                    {...children.props}
-                    
-                    
-                    // essentials:
-                    elmRef={(elm) => {
-                        setRef(children.props.elmRef, elm);
-                        setRef(elmRef, elm);
-                        setRef(childRef, elm);
-                    }}
-                    
-                    
-                    // accessibilities:
-                    tabIndex={tabIndex}
-                    excited={excitedFn}
-                    onExcitedChange={(newExcited) => {
-                        children.props.onExcitedChange?.(newExcited);
-                        
-                        
-                        
-                        onExcitedChange?.(newExcited);
-                        setExcitedDn(newExcited);
-                    }}
-                    
-                    
-                    // events:
-                    onActiveChange={(newActive, closeType) => {
-                        children.props.onActiveChange?.(newActive, closeType);
-                        
-                        
-                        
-                        onActiveChange?.(newActive, closeType);
-                    }}
-                    
-                    
-                    // children:
-                    children={(!(props.lazy ?? false) || isVisible) && children.props.children}
-                />
-                :
-                <ModalElement<TElement, TCloseType>
-                    // essentials:
-                    elmRef={(elm) => {
-                        setRef(elmRef, elm);
-                        setRef(childRef, elm);
-                    }}
-                    
-                    
-                    // accessibilities:
-                    tabIndex={tabIndex}
-                    excited={excitedFn}
-                    onExcitedChange={(newExcited) => {
-                        onExcitedChange?.(newExcited);
-                        setExcitedDn(newExcited);
-                    }}
-                    
-                    
-                    // events:
-                    onActiveChange={(newActive, closeType) => {
-                        onActiveChange?.(newActive, closeType);
-                    }}
-                >
-                    { (!(props.lazy ?? false) || isVisible) && props.children }
-                </ModalElement>
-            }
+            { React.cloneElement(React.cloneElement(dialog, defaultDialogProps,
+                ((!lazy || isVisible) && children)
+            ), dialog.props) }
         </Indicator>
     );
 }

@@ -1,4 +1,4 @@
-/// <reference types="react" />
+import { default as React } from 'react';
 import type { PropEx } from '@cssfn/css-types';
 import { ElementProps } from '@nodestrap/element';
 import { TogglerExcitedProps } from '@nodestrap/basic';
@@ -10,21 +10,21 @@ export interface ModalAnimVars {
     anim: any;
 }
 export declare const usesModalAnim: () => readonly [() => import("@cssfn/cssfn").Rule, import("@cssfn/css-var").ReadonlyRefs<ModalAnimVars>, import("@cssfn/css-var").ReadonlyDecls<ModalAnimVars>];
-export declare type ModalStyle = 'hidden' | 'interactive' | 'static';
-export interface ModalVariant {
-    modalStyle?: ModalStyle;
+export declare type BackdropStyle = 'hidden' | 'interactive' | 'static';
+export interface BackdropVariant {
+    backdropStyle?: BackdropStyle;
 }
-export declare const useModalVariant: (props: ModalVariant) => {
-    class: ModalStyle | null;
+export declare const useModalVariant: ({ backdropStyle }: BackdropVariant) => {
+    class: BackdropStyle | null;
 };
-export declare const usesModalElementLayout: () => import("@cssfn/cssfn").Rule;
-export declare const usesModalElementStates: () => import("@cssfn/cssfn").Rule;
-export declare const useModalElementSheet: import("@cssfn/types").Factory<import("jss").Classes<"main">>;
-export declare const usesModalLayout: () => import("@cssfn/cssfn").Rule;
-export declare const usesModalVariants: () => import("@cssfn/cssfn").Rule;
-export declare const usesModalStates: () => import("@cssfn/cssfn").Rule;
+export declare const usesDialogLayout: () => import("@cssfn/cssfn").Rule;
+export declare const usesDialogStates: () => import("@cssfn/cssfn").Rule;
+export declare const useDialogSheet: import("@cssfn/types").Factory<import("jss").Classes<"main">>;
+export declare const usesBackdropLayout: () => import("@cssfn/cssfn").Rule;
+export declare const usesBackdropVariants: () => import("@cssfn/cssfn").Rule;
+export declare const usesBackdropStates: () => import("@cssfn/cssfn").Rule;
 export declare const usesDocumentBodyLayout: () => import("@cssfn/cssfn").Rule;
-export declare const useModalSheet: import("@cssfn/types").Factory<import("jss").Classes<"main" | "body">>;
+export declare const useBackdropSheet: import("@cssfn/types").Factory<import("jss").Classes<"main" | "body">>;
 export declare const cssProps: import("@cssfn/css-config").Refs<{
     backg: string;
     elementBoxShadow: (string | number)[][];
@@ -51,12 +51,15 @@ export declare type ModalCloseType = 'overlay' | 'shortcut';
 export interface ModalAction<TCloseType = ModalCloseType> {
     onActiveChange?: (newActive: boolean, arg?: TCloseType) => void;
 }
-export interface ModalElementProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends ModalAction<TCloseType>, ElementProps<TElement>, TogglerExcitedProps, ModalVariant {
+export interface DialogProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends ModalAction<TCloseType>, IndicatorProps<TElement>, TogglerExcitedProps {
+    isModal?: boolean;
+    isVisible?: boolean;
     tabIndex?: number;
 }
-export declare function ModalElement<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalElementProps<TElement, TCloseType>): JSX.Element;
-export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, ModalElementProps<TElement, TCloseType> {
+export declare function Dialog<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: DialogProps<TElement, TCloseType>): JSX.Element;
+export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, Omit<DialogProps<TElement, TCloseType>, 'isModal' | 'isVisible'>, BackdropVariant {
     lazy?: boolean;
+    dialog?: React.ReactComponentElement<any, ElementProps>;
 }
 export declare function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>): JSX.Element;
 export { Modal as default };

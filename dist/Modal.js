@@ -18,10 +18,10 @@ import { createCssConfig,
 usesGeneralProps, usesPrefixedProps, usesSuffixedProps, overwriteProps, } from '@cssfn/css-config'; // Stores & retrieves configuration using *css custom properties* (css variables)
 // nodestrap utilities:
 import { useIsomorphicLayoutEffect, } from '@nodestrap/hooks';
-import { stripoutFocusableElement, } from '@nodestrap/stripouts';
+import { stripoutFocusableElement, stripoutDialog, } from '@nodestrap/stripouts';
 import { 
 // utilities:
-isTypeOf, setRef, } from '@nodestrap/utilities';
+setRef, } from '@nodestrap/utilities';
 // nodestrap components:
 import { Element, } from '@nodestrap/element';
 import { 
@@ -61,13 +61,13 @@ export const usesModalAnim = () => {
         modalAnimDecls,
     ];
 };
-export const useModalVariant = (props) => {
+export const useModalVariant = ({ backdropStyle }) => {
     return {
-        class: props.modalStyle ? props.modalStyle : null,
+        class: backdropStyle ? backdropStyle : null,
     };
 };
 // styles:
-export const usesModalElementLayout = () => {
+export const usesDialogLayout = () => {
     // dependencies:
     // animations:
     const [anim, animRefs] = usesAnim();
@@ -75,12 +75,16 @@ export const usesModalElementLayout = () => {
         ...imports([
             // resets:
             stripoutFocusableElement(),
+            stripoutDialog(),
             // animations:
             anim(),
         ]),
         ...style({
             // layouts:
-            display: 'inline-block',
+            display: 'block',
+            // sizes:
+            inlineSize: 'fit-content',
+            blockSize: 'fit-content',
             // animations:
             boxShadow: animRefs.boxShadow,
             filter: animRefs.filter,
@@ -90,7 +94,7 @@ export const usesModalElementLayout = () => {
         }),
     });
 };
-export const usesModalElementStates = () => {
+export const usesDialogStates = () => {
     // dependencies:
     // states:
     const [excited] = usesExcitedState();
@@ -101,37 +105,38 @@ export const usesModalElementStates = () => {
         ]),
     });
 };
-export const useModalElementSheet = createUseSheet(() => [
+export const useDialogSheet = createUseSheet(() => [
     mainComposition(imports([
         // layouts:
-        usesModalElementLayout(),
+        usesDialogLayout(),
         // states:
-        usesModalElementStates(),
+        usesDialogStates(),
     ])),
 ], /*sheetId :*/ 'u4teynvq1y'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
-export const usesModalLayout = () => {
+export const usesBackdropLayout = () => {
     // dependencies:
     // animations:
     const [, modalAnimRefs] = usesModalAnim();
     return style({
+        // positions:
+        position: 'fixed',
+        inset: 0,
         // layouts:
-        display: 'block',
+        display: 'grid',
+        // child default sizes:
+        justifyItems: 'center',
+        alignItems: 'center',
         // sizes:
         // fills the entire screen:
         boxSizing: 'border-box',
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
-        height: '100vh',
-        // maxWidth     : 'fill-available', // hack to excluding scrollbar // not needed since all html pages are virtually full width
-        // maxHeight    : 'fill-available', // hack to excluding scrollbar // will be handle by javascript soon
+        minBlockSize: '100vh',
         // animations:
         anim: modalAnimRefs.anim,
         // customize:
         ...usesGeneralProps(cssProps), // apply general cssProps
     });
 };
-export const usesModalVariants = () => {
+export const usesBackdropVariants = () => {
     // dependencies:
     // layouts:
     const [sizes] = usesSizeVariant((sizeName) => style({
@@ -159,7 +164,7 @@ export const usesModalVariants = () => {
         ]),
     });
 };
-export const usesModalStates = () => {
+export const usesBackdropStates = () => {
     // dependencies:
     // animations:
     const [modalAnim] = usesModalAnim();
@@ -182,14 +187,14 @@ export const usesDocumentBodyLayout = () => {
         overflow: 'hidden',
     });
 };
-export const useModalSheet = createUseSheet(() => [
+export const useBackdropSheet = createUseSheet(() => [
     mainComposition(imports([
         // layouts:
-        usesModalLayout(),
+        usesBackdropLayout(),
         // variants:
-        usesModalVariants(),
+        usesBackdropVariants(),
         // states:
-        usesModalStates(),
+        usesBackdropStates(),
     ])),
     compositionOf('body', imports([
         usesDocumentBodyLayout(),
@@ -227,20 +232,25 @@ export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
         //#endregion animations
     };
 }, { prefix: 'mdl' });
-export function ModalElement(props) {
+export function Dialog(props) {
     // styles:
-    const sheet = useModalElementSheet();
+    const sheet = useDialogSheet();
     // states:
     const excitedState = useExcitedState(props);
     // rest props:
     const { 
     // accessibilities:
-    tabIndex = -1, 
+    isModal, isVisible, tabIndex = -1, 
     // actions:
     onActiveChange, // not implemented
-    onExcitedChange, ...restProps } = props;
+    onExcitedChange, // not implemented
+    ...restProps } = props;
     // jsx:
-    return (React.createElement(Element, { ...restProps, ...{
+    return (React.createElement(Element, { ...restProps, 
+        // semantics:
+        semanticTag: props.semanticTag ?? 'dialog', semanticRole: props.semanticRole ?? 'dialog', "aria-modal": isModal, ...{
+            open: isVisible,
+        }, ...{
             tabIndex,
         }, 
         // classes:
@@ -256,7 +266,7 @@ export function ModalElement(props) {
 }
 export function Modal(props) {
     // styles:
-    const sheet = useModalSheet();
+    const sheet = useBackdropSheet();
     // variants:
     const modalVariant = useModalVariant(props);
     // states:
@@ -264,21 +274,36 @@ export function Modal(props) {
     // rest props:
     const { 
     // essentials:
-    elmRef, // moved to ModalElement
+    elmRef, // moved to <Dialog>
     // accessibilities:
-    enabled, // from accessibilities, not implemented
-    inheritEnabled, // from accessibilities, not implemented
     active, // from accessibilities
     inheritActive, // from accessibilities
-    tabIndex, // from Modal, moved to ModalElement
+    tabIndex, // from Modal, moved to <Dialog>
     excited, onExcitedChange, 
     // actions:
     onActiveChange, 
+    // performances:
+    lazy = false, 
+    // components:
+    dialog = React.createElement(Dialog, null), 
     // children:
-    children, ...restProps } = props;
+    children, ...restBackdropProps } = props;
+    const { 
+    // layouts:
+    size, 
+    // orientation,
+    nude, 
+    // colors:
+    theme, gradient, outlined, mild, 
+    // <Indicator> states:
+    enabled, inheritEnabled, readOnly, inheritReadOnly,
+    // active,
+    // inheritActive,
+     } = restBackdropProps;
     // states:
     const activePassiveState = useActivePassiveState({ active, inheritActive: false });
-    const isVisible = activePassiveState.active || (!!activePassiveState.class);
+    const isActive = activePassiveState.active;
+    const isVisible = isActive || (!!activePassiveState.class);
     const isNoBackInteractive = isVisible && ((modalVariant.class !== 'hidden') && (modalVariant.class !== 'interactive'));
     // fn props:
     const excitedFn = excited ?? excitedDn;
@@ -288,7 +313,7 @@ export function Modal(props) {
         if (!isVisible)
             return; // modal is not shown => nothing to do
         // setups:
-        childRef.current?.focus({ preventScroll: true }); // when actived => focus the ModalElement, so the user able to use [esc] key to close the modal
+        childRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
     }, [isVisible]); // (re)run the setups on every time the modal is shown
     useIsomorphicLayoutEffect(() => {
         if (!isNoBackInteractive)
@@ -301,23 +326,61 @@ export function Modal(props) {
         };
     }, [isNoBackInteractive, sheet.body]); // (re)run the setups on every time the no_back_interactive & sheet.body changes
     // jsx:
-    return (React.createElement(Indicator, { ...restProps, 
-        // semantics:
-        semanticTag: props.semanticTag ?? [null], semanticRole: props.semanticRole ?? 'dialog', "aria-modal": props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined), ...{
-            active: activePassiveState.active,
-            inheritActive: false,
-        }, 
+    const defaultDialogProps = {
+        // essentials:
+        elmRef: (elm) => {
+            if (dialog.props.elmRef)
+                setRef(dialog.props.elmRef, elm);
+            setRef(elmRef, elm);
+            setRef(childRef, elm);
+        },
+        // accessibilities:
+        isModal: !!(props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)),
+        isVisible: isVisible,
+        tabIndex: tabIndex,
+        excited: excitedFn,
+        onExcitedChange: (newExcited) => {
+            dialog.props.onExcitedChange?.(newExcited);
+            onExcitedChange?.(newExcited);
+            setExcitedDn(newExcited);
+        },
+        // actions:
+        onActiveChange: (newActive, closeType) => {
+            dialog.props.onActiveChange?.(newActive, closeType);
+            onActiveChange?.(newActive, closeType);
+        },
+        // variants:
+        // layouts:
+        size: size,
+        // orientation : orientation,
+        nude: nude,
+        // colors:
+        theme: theme,
+        gradient: gradient,
+        outlined: outlined,
+        mild: mild,
+        // <Indicator> states:
+        enabled: enabled,
+        inheritEnabled: inheritEnabled,
+        readOnly: readOnly,
+        inheritReadOnly: inheritReadOnly,
+        active: isActive,
+        inheritActive: false,
+    };
+    return (React.createElement(Indicator, { ...restBackdropProps, 
+        // accessibilities:
+        active: isActive, inheritActive: false, 
         // classes:
         mainClass: props.mainClass ?? sheet.main, variantClasses: [...(props.variantClasses ?? []),
             modalVariant.class,
         ], 
         // events:
-        // watch left click on the overlay only (not at the ModalElement):
+        // watch left click on the overlay only (not at the <Dialog>):
         onClick: (e) => {
             props.onClick?.(e);
             if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
                 if (!e.defaultPrevented) {
-                    if (props.modalStyle !== 'static') {
+                    if (props.backdropStyle !== 'static') {
                         if (onActiveChange) {
                             onActiveChange(false, 'overlay');
                             e.preventDefault();
@@ -325,13 +388,13 @@ export function Modal(props) {
                     }
                     else {
                         setExcitedDn(true);
-                        childRef.current?.focus({ preventScroll: true }); // re-focus to the ModalElement, so the user able to use [esc] key to close the Modal
+                        childRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
                         e.preventDefault();
                     } // if static
                 } // if
             } // if
         }, 
-        // watch [escape key] on the whole Modal, including ModalElement & ModalElement's children:
+        // watch [escape key] on the whole Modal, including <Dialog> & <Dialog>'s children:
         onKeyUp: (e) => {
             props.onKeyUp?.(e);
             if (!e.defaultPrevented) {
@@ -346,45 +409,6 @@ export function Modal(props) {
             props.onAnimationEnd?.(e);
             // states:
             activePassiveState.handleAnimationEnd(e);
-        } }, isTypeOf(children, ModalElement)
-        ?
-            React.createElement(children.type
-            // other props:
-            , { ...children.props, 
-                // essentials:
-                elmRef: (elm) => {
-                    setRef(children.props.elmRef, elm);
-                    setRef(elmRef, elm);
-                    setRef(childRef, elm);
-                }, 
-                // accessibilities:
-                tabIndex: tabIndex, excited: excitedFn, onExcitedChange: (newExcited) => {
-                    children.props.onExcitedChange?.(newExcited);
-                    onExcitedChange?.(newExcited);
-                    setExcitedDn(newExcited);
-                }, 
-                // events:
-                onActiveChange: (newActive, closeType) => {
-                    children.props.onActiveChange?.(newActive, closeType);
-                    onActiveChange?.(newActive, closeType);
-                }, 
-                // children:
-                children: (!(props.lazy ?? false) || isVisible) && children.props.children })
-        :
-            React.createElement(ModalElement, { 
-                // essentials:
-                elmRef: (elm) => {
-                    setRef(elmRef, elm);
-                    setRef(childRef, elm);
-                }, 
-                // accessibilities:
-                tabIndex: tabIndex, excited: excitedFn, onExcitedChange: (newExcited) => {
-                    onExcitedChange?.(newExcited);
-                    setExcitedDn(newExcited);
-                }, 
-                // events:
-                onActiveChange: (newActive, closeType) => {
-                    onActiveChange?.(newActive, closeType);
-                } }, (!(props.lazy ?? false) || isVisible) && props.children)));
+        } }, React.cloneElement(React.cloneElement(dialog, defaultDialogProps, ((!lazy || isVisible) && children)), dialog.props)));
 }
 export { Modal as default };

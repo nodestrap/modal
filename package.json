@@ -1,6 +1,6 @@
 {
   "name": "@nodestrap/modal",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "description": "Overlays a dialog on site page.",
   "type": "module",
   "main": "dist/Modal.js",
@@ -31,18 +31,18 @@
   },
   "homepage": "https://github.com/nodestrap/modal#readme",
   "dependencies": {
-    "@cssfn/css-config": "^1.0.4",
+    "@cssfn/css-config": "^1.0.8",
     "@cssfn/css-types": "^1.0.4",
-    "@cssfn/css-var": "^1.0.4",
-    "@cssfn/cssfn": "^1.0.11",
+    "@cssfn/css-var": "^1.0.5",
+    "@cssfn/cssfn": "^1.0.12",
     "@cssfn/react-cssfn": "^1.0.11",
     "@nodestrap/basic": "^4.0.7",
     "@nodestrap/element": "^4.0.7",
     "@nodestrap/hooks": "^4.0.1",
-    "@nodestrap/indicator": "^4.0.7",
-    "@nodestrap/stripouts": "^4.0.2",
+    "@nodestrap/indicator": "^4.0.8",
+    "@nodestrap/stripouts": "^4.0.3",
     "@nodestrap/utilities": "^4.0.3",
-    "@types/react": "^17.0.39",
+    "@types/react": "^17.0.43",
     "react": "^17.0.2"
   }
 }
