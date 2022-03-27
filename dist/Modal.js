@@ -122,6 +122,7 @@ export const usesBackdropLayout = () => {
         // positions:
         position: 'fixed',
         inset: 0,
+        zIndex: 1040,
         // layouts:
         display: 'grid',
         // child default sizes:
@@ -309,8 +310,11 @@ export function Modal(props) {
     // fn props:
     const excitedFn = excited ?? excitedDn;
     // dom effects:
-    const [containerRef] = useState(() => document.createElement('div'));
+    const [containerRef] = useState(() => (typeof (document) === 'undefined') ? null : document.createElement('div'));
     useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (!containerRef)
+            return; // server side => no portal
         // setups:
         document.body.appendChild(containerRef);
         // cleanups:
@@ -336,6 +340,8 @@ export function Modal(props) {
         };
     }, [isNoBackInteractive, sheet.body]); // (re)run the setups on every time the no_back_interactive & sheet.body changes
     // jsx:
+    if (!containerRef)
+        return React.createElement(React.Fragment, null); // server side => no portal
     const defaultDialogProps = {
         // essentials:
         elmRef: (elm) => {
