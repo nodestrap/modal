@@ -1,6 +1,5 @@
 import { default as React } from 'react';
 import type { PropEx } from '@cssfn/css-types';
-import { ElementProps } from '@nodestrap/element';
 import { TogglerExcitedProps } from '@nodestrap/basic';
 import { IndicatorProps } from '@nodestrap/indicator';
 export interface ModalAnimVars {
@@ -14,7 +13,7 @@ export declare type BackdropStyle = 'hidden' | 'interactive' | 'static';
 export interface BackdropVariant {
     backdropStyle?: BackdropStyle;
 }
-export declare const useModalVariant: ({ backdropStyle }: BackdropVariant) => {
+export declare const useBackdropVariant: ({ backdropStyle }: BackdropVariant) => {
     class: BackdropStyle | null;
 };
 export declare const usesDialogLayout: () => import("@cssfn/cssfn").Rule;
@@ -51,15 +50,13 @@ export declare type ModalCloseType = 'overlay' | 'shortcut';
 export interface ModalAction<TCloseType = ModalCloseType> {
     onActiveChange?: (newActive: boolean, arg?: TCloseType) => void;
 }
-export interface DialogProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends ModalAction<TCloseType>, IndicatorProps<TElement>, TogglerExcitedProps {
-    isModal?: boolean;
+export interface DialogProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, ModalAction<TCloseType>, TogglerExcitedProps {
     isVisible?: boolean;
     tabIndex?: number;
 }
-export declare function Dialog<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: DialogProps<TElement, TCloseType>): JSX.Element;
-export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, Omit<DialogProps<TElement, TCloseType>, 'isModal' | 'isVisible'>, BackdropVariant {
+export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType> extends IndicatorProps<TElement>, Omit<DialogProps<TElement, TCloseType>, 'isVisible'>, BackdropVariant {
+    viewportRef?: React.RefObject<HTMLElement> | HTMLElement | null;
     lazy?: boolean;
-    dialog?: React.ReactComponentElement<any, ElementProps>;
 }
 export declare function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>): JSX.Element;
 export { Modal as default };

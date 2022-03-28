@@ -24,10 +24,9 @@ import {
 // utilities:
 setRef, } from '@nodestrap/utilities';
 // nodestrap components:
-import { Element, } from '@nodestrap/element';
 import { 
 // hooks:
-usesSizeVariant, usesAnim, usesExcitedState, useExcitedState, } from '@nodestrap/basic';
+usesSizeVariant, usesAnim, usesExcitedState, } from '@nodestrap/basic';
 import { 
 // hooks:
 isActivating, isPassivating, isPassived, useActivePassiveState, Indicator, } from '@nodestrap/indicator';
@@ -62,7 +61,7 @@ export const usesModalAnim = () => {
         modalAnimDecls,
     ];
 };
-export const useModalVariant = ({ backdropStyle }) => {
+export const useBackdropVariant = ({ backdropStyle }) => {
     return {
         class: backdropStyle ? backdropStyle : null,
     };
@@ -120,7 +119,10 @@ export const usesBackdropLayout = () => {
     const [, modalAnimRefs] = usesModalAnim();
     return style({
         // positions:
-        position: 'fixed',
+        position: 'absolute',
+        ...rule('body>*>&', {
+            position: 'fixed',
+        }),
         inset: 0,
         zIndex: 1040,
         // layouts:
@@ -130,8 +132,10 @@ export const usesBackdropLayout = () => {
         alignItems: 'center',
         // sizes:
         // fills the entire screen:
-        boxSizing: 'border-box',
-        minBlockSize: '100vh',
+        ...rule('body>*>&', {
+            boxSizing: 'border-box',
+            minBlockSize: '100vh',
+        }),
         // animations:
         anim: modalAnimRefs.anim,
         // customize:
@@ -234,60 +238,30 @@ export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
         //#endregion animations
     };
 }, { prefix: 'mdl' });
-export function Dialog(props) {
-    // styles:
-    const sheet = useDialogSheet();
-    // states:
-    const excitedState = useExcitedState(props);
-    // rest props:
-    const { 
-    // accessibilities:
-    isModal, isVisible, tabIndex = -1, 
-    // actions:
-    onActiveChange, // not implemented
-    onExcitedChange, // not implemented
-    ...restProps } = props;
-    // jsx:
-    return (React.createElement(Element, { ...restProps, 
-        // semantics:
-        semanticTag: props.semanticTag ?? 'dialog', semanticRole: props.semanticRole ?? 'dialog', "aria-modal": isModal, ...{
-            open: isVisible,
-        }, ...{
-            tabIndex,
-        }, 
-        // classes:
-        mainClass: props.mainClass ?? sheet.main, stateClasses: [...(props.stateClasses ?? []),
-            excitedState.class,
-        ], 
-        // events:
-        onAnimationEnd: (e) => {
-            props.onAnimationEnd?.(e);
-            // states:
-            excitedState.handleAnimationEnd(e);
-        } }));
-}
 export function Modal(props) {
     // styles:
     const sheet = useBackdropSheet();
     // variants:
-    const modalVariant = useModalVariant(props);
+    const backdropVariant = useBackdropVariant(props);
     // states:
     const [excitedDn, setExcitedDn] = useState(false);
     // rest props:
     const { 
     // essentials:
-    elmRef, // moved to <Dialog>
+    style, // moved  to <Dialog>
+    // outerRef,       // remain in <Backdrop>
+    elmRef, // moved  to <Dialog>
     // accessibilities:
     active, // from accessibilities
     inheritActive, // from accessibilities
-    tabIndex, // from Modal, moved to <Dialog>
+    tabIndex, // moved  to <Dialog>
     excited, onExcitedChange, 
     // actions:
     onActiveChange, 
+    // modals:
+    viewportRef, 
     // performances:
     lazy = false, 
-    // components:
-    dialog = React.createElement(Dialog, null), 
     // children:
     children, ...restBackdropProps } = props;
     const { 
@@ -302,73 +276,85 @@ export function Modal(props) {
     // active,
     // inheritActive,
      } = restBackdropProps;
+    // verifies:
+    React.Children.only(children);
+    if (!React.isValidElement(children))
+        throw Error('Invalid child element.');
     // states:
     const activePassiveState = useActivePassiveState({ active, inheritActive: false });
     const isActive = activePassiveState.active;
     const isVisible = isActive || (!!activePassiveState.class);
-    const isNoBackInteractive = isVisible && ((modalVariant.class !== 'hidden') && (modalVariant.class !== 'interactive'));
+    const isModal = isVisible && !['hidden', 'interactive'].includes(backdropVariant.class ?? '');
     // fn props:
     const excitedFn = excited ?? excitedDn;
     // dom effects:
-    const [containerRef] = useState(() => (typeof (document) === 'undefined') ? null : document.createElement('div'));
+    const [containerElm] = useState(() => (typeof (document) === 'undefined') ? null : document.createElement('div'));
+    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? ((typeof (document) === 'undefined') ? null : document.body) : ((viewportRef instanceof HTMLElement) ? viewportRef : viewportRef?.current));
     useIsomorphicLayoutEffect(() => {
         // conditions:
-        if (!containerRef)
+        if (!containerElm || !viewportElm)
             return; // server side => no portal
         // setups:
-        document.body.appendChild(containerRef);
+        viewportElm.appendChild(containerElm);
         // cleanups:
         return () => {
-            containerRef.parentElement?.removeChild(containerRef);
+            containerElm.parentElement?.removeChild(containerElm);
         };
-    }, []); // runs once at startup
-    const childRef = useRef(null);
+    }, [viewportElm]); // runs once at startup
+    const dialogRef = useRef(null);
     useEffect(() => {
+        // conditions:
         if (!isVisible)
-            return; // modal is not shown => nothing to do
+            return; // <Dialog> is not shown => nothing to do
         // setups:
-        childRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
-    }, [isVisible]); // (re)run the setups on every time the modal is shown
+        dialogRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
+    }, [isVisible]); // (re)run the setups on every time the <Dialog> is shown
     useIsomorphicLayoutEffect(() => {
-        if (!isNoBackInteractive)
-            return; // only for no_back_interactive mode
+        // conditions:
+        if (!isModal)
+            return; // only for modal mode
+        if (!viewportElm)
+            return; // server side => no portal
         // setups:
-        document.body.classList.add(sheet.body);
+        viewportElm.classList.add(sheet.body);
         // cleanups:
         return () => {
-            document.body.classList.remove(sheet.body);
+            viewportElm.classList.remove(sheet.body);
         };
-    }, [isNoBackInteractive, sheet.body]); // (re)run the setups on every time the no_back_interactive & sheet.body changes
+    }, [isModal, sheet.body]); // (re)run the setups on every time the isModal & sheet.body changes
     // jsx:
-    if (!containerRef)
+    if (!containerElm)
         return React.createElement(React.Fragment, null); // server side => no portal
-    const defaultDialogProps = {
+    let defaultDialogProps = {
         // essentials:
+        style: style,
         elmRef: (elm) => {
-            if (dialog.props.elmRef)
-                setRef(dialog.props.elmRef, elm);
+            setRef(children.props.elmRef, elm);
             setRef(elmRef, elm);
-            setRef(childRef, elm);
+            setRef(dialogRef, elm);
         },
+        // semantics:
+        semanticTag: [null, 'dialog'],
+        semanticRole: 'dialog',
+        'aria-modal': isModal || undefined,
         // accessibilities:
-        isModal: !!(props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)),
         isVisible: isVisible,
         tabIndex: tabIndex,
         excited: excitedFn,
         onExcitedChange: (newExcited) => {
-            dialog.props.onExcitedChange?.(newExcited);
+            children.props.onExcitedChange?.(newExcited);
             onExcitedChange?.(newExcited);
             setExcitedDn(newExcited);
         },
         // actions:
         onActiveChange: (newActive, closeType) => {
-            dialog.props.onActiveChange?.(newActive, closeType);
+            children.props.onActiveChange?.(newActive, closeType);
             onActiveChange?.(newActive, closeType);
         },
         // variants:
         // layouts:
         size: size,
-        // orientation : orientation,
+        // orientation     : orientation,
         nude: nude,
         // colors:
         theme: theme,
@@ -383,12 +369,21 @@ export function Modal(props) {
         active: isActive,
         inheritActive: false,
     };
+    if (typeof (children.type) === 'string') {
+        defaultDialogProps = {
+            // essentials:
+            ref: defaultDialogProps.elmRef,
+        };
+        if (children.type === 'dialog') {
+            defaultDialogProps.open = defaultDialogProps.isVisible;
+        } // if
+    } // if
     return createPortal(React.createElement(Indicator, { ...restBackdropProps, 
         // accessibilities:
         active: isActive, inheritActive: false, 
         // classes:
         mainClass: props.mainClass ?? sheet.main, variantClasses: [...(props.variantClasses ?? []),
-            modalVariant.class,
+            backdropVariant.class,
         ], 
         // events:
         // watch left click on the overlay only (not at the <Dialog>):
@@ -404,7 +399,7 @@ export function Modal(props) {
                     }
                     else {
                         setExcitedDn(true);
-                        childRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
+                        dialogRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
                         e.preventDefault();
                     } // if static
                 } // if
@@ -425,6 +420,6 @@ export function Modal(props) {
             props.onAnimationEnd?.(e);
             // states:
             activePassiveState.handleAnimationEnd(e);
-        } }, React.cloneElement(React.cloneElement(dialog, defaultDialogProps, ((!lazy || isVisible) && children)), dialog.props)), containerRef);
+        } }, (!lazy || isVisible) && React.cloneElement(React.cloneElement(children, defaultDialogProps), children.props)), containerElm);
 }
 export { Modal as default };

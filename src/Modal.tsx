@@ -71,16 +71,10 @@ import {
 
 // nodestrap components:
 import {
-    // react components:
-    ElementProps,
-    Element,
-}                           from '@nodestrap/element'
-import {
     // hooks:
     usesSizeVariant,
     usesAnim,
     usesExcitedState,
-    useExcitedState,
     TogglerExcitedProps,
 }                           from '@nodestrap/basic'
 import {
@@ -155,7 +149,7 @@ export type BackdropStyle = 'hidden'|'interactive'|'static' // might be added mo
 export interface BackdropVariant {
     backdropStyle? : BackdropStyle
 }
-export const useModalVariant = ({ backdropStyle }: BackdropVariant) => {
+export const useBackdropVariant = ({ backdropStyle }: BackdropVariant) => {
     return {
         class : backdropStyle ? backdropStyle : null,
     };
@@ -245,7 +239,10 @@ export const usesBackdropLayout = () => {
     
     return style({
         // positions:
-        position     : 'fixed',
+        position     : 'absolute',
+        ...rule('body>*>&', {
+            position : 'fixed',
+        }),
         inset        : 0,
         zIndex       : 1040,
         
@@ -262,8 +259,10 @@ export const usesBackdropLayout = () => {
         
         // sizes:
         // fills the entire screen:
-        boxSizing    : 'border-box', // the final size is including borders & paddings
-        minBlockSize : '100vh',
+        ...rule('body>*>&', {
+            boxSizing    : 'border-box', // the final size is including borders & paddings
+            minBlockSize : '100vh',
+        }),
         
         
         
@@ -416,101 +415,31 @@ export interface ModalAction<TCloseType = ModalCloseType>
 
 export interface DialogProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>
     extends
-        ModalAction<TCloseType>,
         IndicatorProps<TElement>,
+        ModalAction<TCloseType>,
         
         // states:
         TogglerExcitedProps
 {
     // accessibilities:
-    isModal?   : boolean
     isVisible? : boolean
     tabIndex?  : number
 }
-export function Dialog<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: DialogProps<TElement, TCloseType>) {
-    // styles:
-    const sheet        = useDialogSheet();
-    
-    
-    
-    // states:
-    const excitedState = useExcitedState(props);
-    
-    
-    
-    // rest props:
-    const {
-        // accessibilities:
-        isModal,
-        isVisible,
-        tabIndex = -1,
-        
-        
-        // actions:
-        onActiveChange,  // not implemented
-        onExcitedChange, // not implemented
-    ...restProps} = props;
-    
-    
-    
-    // jsx:
-    return (
-        <Element<TElement>
-            // other props:
-            {...restProps}
-            
-            
-            // semantics:
-            semanticTag ={props.semanticTag   ?? 'dialog'}
-            semanticRole={props.semanticRole  ?? 'dialog'}
-            aria-modal={isModal}
-            {...{
-                open : isVisible,
-            }}
-            
-            
-            // accessibilities:
-            {...{
-                tabIndex,
-            }}
-            
-            
-            // classes:
-            mainClass={props.mainClass ?? sheet.main}
-            stateClasses={[...(props.stateClasses ?? []),
-                excitedState.class,
-            ]}
-            
-            
-            // events:
-            onAnimationEnd={(e) => {
-                props.onAnimationEnd?.(e);
-                
-                
-                
-                // states:
-                excitedState.handleAnimationEnd(e);
-            }}
-        />
-    );
-}
-
-
 
 export interface ModalProps<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>
     extends
         IndicatorProps<TElement>,
-        Omit<DialogProps<TElement, TCloseType>, 'isModal'|'isVisible'>,
+        Omit<DialogProps<TElement, TCloseType>, 'isVisible'>,
         
         // appearances:
         BackdropVariant
 {
+    // modals:
+    viewportRef? : React.RefObject<HTMLElement>|HTMLElement|null // getter ref
+    
+    
     // performances:
-    lazy?   : boolean
-    
-    
-    // components:
-    dialog? : React.ReactComponentElement<any, ElementProps>
+    lazy?        : boolean
 }
 export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = ModalCloseType>(props: ModalProps<TElement, TCloseType>) {
     // styles:
@@ -519,7 +448,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     
     // variants:
-    const modalVariant              = useModalVariant(props);
+    const backdropVariant           = useBackdropVariant(props);
     
     
     
@@ -531,13 +460,15 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     // rest props:
     const {
         // essentials:
-        elmRef,        // moved to <Dialog>
+        style,          // moved  to <Dialog>
+     // outerRef,       // remain in <Backdrop>
+        elmRef,         // moved  to <Dialog>
         
         
         // accessibilities:
         active,         // from accessibilities
         inheritActive,  // from accessibilities
-        tabIndex,       // from Modal, moved to <Dialog>
+        tabIndex,       // moved  to <Dialog>
         
         excited,
         onExcitedChange,
@@ -547,12 +478,12 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         onActiveChange,
         
         
+        // modals:
+        viewportRef,
+        
+        
         // performances:
         lazy = false,
-        
-        
-        // components:
-        dialog = <Dialog<TElement, TCloseType> />,
         
         
         // children:
@@ -583,11 +514,17 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     
     
+    // verifies:
+    React.Children.only(children);
+    if (!React.isValidElement<DialogProps<TElement, TCloseType>>(children)) throw Error('Invalid child element.');
+    
+    
+    
     // states:
-    const activePassiveState        = useActivePassiveState({ active, inheritActive: false });
-    const isActive                  = activePassiveState.active;
-    const isVisible                 = isActive || (!!activePassiveState.class);
-    const isNoBackInteractive       = isVisible && ((modalVariant.class !== 'hidden') && (modalVariant.class !== 'interactive'));
+    const activePassiveState = useActivePassiveState({ active, inheritActive: false });
+    const isActive           = activePassiveState.active;
+    const isVisible          = isActive || (!!activePassiveState.class);
+    const isModal            = isVisible && !['hidden', 'interactive'].includes(backdropVariant.class ?? '');
     
     
     
@@ -597,71 +534,86 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     
     // dom effects:
-    const [containerRef] = useState(() => (typeof(document) === 'undefined') ? null : document.createElement('div'));
+    const [containerElm] = useState(() => (typeof(document) === 'undefined') ? null : document.createElement('div'));
+    const viewportElm    = (viewportRef === null) ? null : ((viewportRef === undefined) ? ((typeof(document) === 'undefined') ? null : document.body) : ((viewportRef instanceof HTMLElement) ? viewportRef : viewportRef?.current));
     useIsomorphicLayoutEffect(() => {
         // conditions:
-        if (!containerRef) return; // server side => no portal
+        if (!containerElm || !viewportElm) return; // server side => no portal
         
         
         
         // setups:
-        document.body.appendChild(containerRef);
+        viewportElm.appendChild(containerElm);
         
         
         
         // cleanups:
         return () => {
-            containerRef.parentElement?.removeChild(containerRef);
+            containerElm.parentElement?.removeChild(containerElm);
         };
-    }, []); // runs once at startup
+    }, [viewportElm]); // runs once at startup
     
-    const childRef = useRef<TElement|null>(null);
+    const dialogRef = useRef<TElement|null>(null);
     useEffect(() => {
-        if (!isVisible) return; // modal is not shown => nothing to do
+        // conditions:
+        if (!isVisible) return; // <Dialog> is not shown => nothing to do
         
         
         
         // setups:
-        childRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
-    }, [isVisible]); // (re)run the setups on every time the modal is shown
+        dialogRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
+    }, [isVisible]); // (re)run the setups on every time the <Dialog> is shown
     
     useIsomorphicLayoutEffect(() => {
-        if (!isNoBackInteractive) return; // only for no_back_interactive mode
+        // conditions:
+        if (!isModal)     return; // only for modal mode
+        if (!viewportElm) return; // server side => no portal
         
         
         
         // setups:
-        document.body.classList.add(sheet.body);
+        viewportElm.classList.add(sheet.body);
         
         
         
         // cleanups:
         return () => {
-            document.body.classList.remove(sheet.body);
+            viewportElm.classList.remove(sheet.body);
         };
-    }, [isNoBackInteractive, sheet.body]); // (re)run the setups on every time the no_back_interactive & sheet.body changes
+    }, [isModal, sheet.body]); // (re)run the setups on every time the isModal & sheet.body changes
     
     
     
     // jsx:
-    if (!containerRef) return <></>; // server side => no portal
-    const defaultDialogProps : DialogProps<TElement, TCloseType> = {
+    if (!containerElm) return <></>; // server side => no portal
+    
+    interface NativeDialogProps {
+        ref?      : React.Ref<TElement>
+        open?     : boolean
+    }
+    let defaultDialogProps : DialogProps<TElement, TCloseType> & NativeDialogProps = {
         // essentials:
+        style           : style,
         elmRef          : (elm) => {
-            if (dialog.props.elmRef) setRef(dialog.props.elmRef, elm);
+            setRef(children.props.elmRef, elm);
             
-            setRef(elmRef, elm);
-            setRef(childRef, elm);
+            setRef(elmRef   , elm);
+            setRef(dialogRef, elm);
         },
         
         
+        // semantics:
+        semanticTag     : [null, 'dialog'],
+        semanticRole    :        'dialog' ,
+        'aria-modal'    : isModal || undefined,
+        
+        
         // accessibilities:
-        isModal         : !!(props['aria-modal'] ?? ((isVisible && isNoBackInteractive) ? true : undefined)),
         isVisible       : isVisible,
         tabIndex        : tabIndex,
         excited         : excitedFn,
         onExcitedChange : (newExcited) => {
-            dialog.props.onExcitedChange?.(newExcited);
+            children.props.onExcitedChange?.(newExcited);
             
             onExcitedChange?.(newExcited);
             setExcitedDn(newExcited);
@@ -670,7 +622,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         
         // actions:
         onActiveChange  : (newActive, closeType) => {
-            dialog.props.onActiveChange?.(newActive, closeType);
+            children.props.onActiveChange?.(newActive, closeType);
             
             onActiveChange?.(newActive, closeType);
         },
@@ -678,14 +630,14 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         
         // variants:
         // layouts:
-        size        : size,
-        // orientation : orientation,
-        nude        : nude,
+        size            : size,
+     // orientation     : orientation,
+        nude            : nude,
         // colors:
-        theme       : theme,
-        gradient    : gradient,
-        outlined    : outlined,
-        mild        : mild,
+        theme           : theme,
+        gradient        : gradient,
+        outlined        : outlined,
+        mild            : mild,
         
         
         // <Indicator> states:
@@ -696,6 +648,16 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         active          : isActive,
         inheritActive   : false,
     };
+    if (typeof(children.type) === 'string') {
+        defaultDialogProps = {
+            // essentials:
+            ref: defaultDialogProps.elmRef,
+        };
+        if (children.type === 'dialog') {
+            defaultDialogProps.open = defaultDialogProps.isVisible;
+        } // if
+    } // if
+    
     return createPortal(
         <Indicator<TElement>
             // other props:
@@ -710,7 +672,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
             // classes:
             mainClass={props.mainClass ?? sheet.main}
             variantClasses={[...(props.variantClasses ?? []),
-                modalVariant.class,
+                backdropVariant.class,
             ]}
             
             
@@ -731,7 +693,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
                         }
                         else {
                             setExcitedDn(true);
-                            childRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
+                            dialogRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
                             e.preventDefault();
                         } // if static
                     } // if
@@ -763,10 +725,8 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
                 activePassiveState.handleAnimationEnd(e);
             }}
         >
-            { React.cloneElement(React.cloneElement(dialog, defaultDialogProps,
-                ((!lazy || isVisible) && children)
-            ), dialog.props) }
+            { (!lazy || isVisible) && React.cloneElement(React.cloneElement(children, defaultDialogProps), children.props) }
         </Indicator>
-    , containerRef);
+    , containerElm);
 }
 export { Modal as default }
