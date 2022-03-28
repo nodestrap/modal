@@ -1,6 +1,6 @@
 {
   "name": "@nodestrap/modal",
-  "version": "4.0.10",
+  "version": "4.0.11",
   "description": "Overlays a dialog on site page.",
   "type": "module",
   "main": "dist/Modal.js",

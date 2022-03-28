@@ -289,7 +289,7 @@ export function Modal(props) {
     const excitedFn = excited ?? excitedDn;
     // dom effects:
     const [containerElm] = useState(() => (typeof (document) === 'undefined') ? null : document.createElement('div'));
-    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? ((typeof (document) === 'undefined') ? null : document.body) : ((viewportRef instanceof HTMLElement) ? viewportRef : viewportRef?.current));
+    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? ((typeof (document) === 'undefined') ? null : document.body) : ((viewportRef.constructor === Object) ? viewportRef?.current : viewportRef));
     useIsomorphicLayoutEffect(() => {
         // conditions:
         if (!containerElm || !viewportElm)
@@ -300,7 +300,7 @@ export function Modal(props) {
         return () => {
             containerElm.parentElement?.removeChild(containerElm);
         };
-    }, [viewportElm]); // runs once at startup
+    }, [viewportElm]); // (re)run the setups on every time the viewportElm changes
     const dialogRef = useRef(null);
     useEffect(() => {
         // conditions:
