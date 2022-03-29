@@ -18,7 +18,6 @@ import { createCssConfig,
 // utilities:
 usesGeneralProps, usesPrefixedProps, usesSuffixedProps, overwriteProps, } from '@cssfn/css-config'; // Stores & retrieves configuration using *css custom properties* (css variables)
 // nodestrap utilities:
-import { useIsomorphicLayoutEffect, } from '@nodestrap/hooks';
 import { stripoutFocusableElement, stripoutDialog, } from '@nodestrap/stripouts';
 import { 
 // utilities:
@@ -238,6 +237,8 @@ export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
         //#endregion animations
     };
 }, { prefix: 'mdl' });
+// react components:
+const isServerSide = (typeof (document) === 'undefined');
 export function Modal(props) {
     // styles:
     const sheet = useBackdropSheet();
@@ -288,19 +289,22 @@ export function Modal(props) {
     // fn props:
     const excitedFn = excited ?? excitedDn;
     // dom effects:
-    const [containerElm] = useState(() => (typeof (document) === 'undefined') ? null : document.createElement('div'));
-    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? ((typeof (document) === 'undefined') ? null : document.body) : ((viewportRef.constructor === Object) ? viewportRef?.current : viewportRef));
-    useIsomorphicLayoutEffect(() => {
+    //#region create the portal element and then insert it after the page is fully hydrated
+    const [portalElm] = useState(() => isServerSide ? null : document.createElement('div'));
+    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? (isServerSide ? null : document.body) : ((viewportRef.constructor === Object) ? viewportRef?.current : viewportRef));
+    useEffect(() => {
         // conditions:
-        if (!containerElm || !viewportElm)
+        if (!portalElm || !viewportElm)
             return; // server side => no portal
         // setups:
-        viewportElm.appendChild(containerElm);
+        viewportElm.appendChild(portalElm);
         // cleanups:
         return () => {
-            containerElm.parentElement?.removeChild(containerElm);
+            portalElm.parentElement?.removeChild(portalElm);
         };
-    }, [viewportElm]); // (re)run the setups on every time the viewportElm changes
+    }, [portalElm, viewportElm]); // (re)run the setups on every time the portalElm & viewportElm changes
+    //#endregion create the portal element and then insert it after the page is fully hydrated
+    //#region focus the <Dialog> while the <Modal> is opened
     const dialogRef = useRef(null);
     useEffect(() => {
         // conditions:
@@ -309,7 +313,9 @@ export function Modal(props) {
         // setups:
         dialogRef.current?.focus({ preventScroll: true }); // when actived => focus the <Dialog>, so the user able to use [esc] key to close the modal
     }, [isVisible]); // (re)run the setups on every time the <Dialog> is shown
-    useIsomorphicLayoutEffect(() => {
+    //#endregion focus the <Dialog> while the <Modal> is opened
+    //#region un-scroll the viewport (<body>) while the <Modal> is opened
+    useEffect(() => {
         // conditions:
         if (!isModal)
             return; // only for modal mode
@@ -321,10 +327,21 @@ export function Modal(props) {
         return () => {
             viewportElm.classList.remove(sheet.body);
         };
-    }, [isModal, sheet.body]); // (re)run the setups on every time the isModal & sheet.body changes
+    }, [isModal, viewportElm, sheet.body]); // (re)run the setups on every time the isModal & sheet.body changes
+    //#endregion un-scroll the viewport (<body>) while the <Modal> is opened
+    //#region delays the rendering of portal until the page is fully hydrated
+    const [isHydrated, setIsHydrated] = useState(false);
+    useEffect(() => {
+        // conditions:
+        if (isServerSide)
+            return; // client side only
+        // setups:
+        setIsHydrated(true);
+    }, []); // run once at startup
+    //#endregion delays the rendering of portal until the page is fully hydrated
     // jsx:
-    if (!containerElm)
-        return React.createElement(React.Fragment, null); // server side => no portal
+    if (!isHydrated || !portalElm)
+        return React.createElement(React.Fragment, null); // page is not already hydrated or server side => nothing to render
     let defaultDialogProps = {
         // essentials:
         style: style,
@@ -372,6 +389,7 @@ export function Modal(props) {
     if (typeof (children.type) === 'string') {
         defaultDialogProps = {
             // essentials:
+            style: defaultDialogProps.style,
             ref: defaultDialogProps.elmRef,
         };
         if (children.type === 'dialog') {
@@ -420,6 +438,6 @@ export function Modal(props) {
             props.onAnimationEnd?.(e);
             // states:
             activePassiveState.handleAnimationEnd(e);
-        } }, (!lazy || isVisible) && React.cloneElement(React.cloneElement(children, defaultDialogProps), children.props)), containerElm);
+        } }, (!lazy || isVisible) && React.cloneElement(React.cloneElement(children, defaultDialogProps), children.props)), portalElm);
 }
 export { Modal as default };
