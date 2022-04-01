@@ -22,25 +22,24 @@ export declare const useDialogSheet: import("@cssfn/types").Factory<import("jss"
 export declare const usesBackdropLayout: () => import("@cssfn/cssfn").Rule;
 export declare const usesBackdropVariants: () => import("@cssfn/cssfn").Rule;
 export declare const usesBackdropStates: () => import("@cssfn/cssfn").Rule;
-export declare const usesDocumentBodyLayout: () => import("@cssfn/cssfn").Rule;
-export declare const useBackdropSheet: import("@cssfn/types").Factory<import("jss").Classes<"main" | "body">>;
+export declare const useBackdropSheet: import("@cssfn/types").Factory<import("jss").Classes<"main">>;
 export declare const cssProps: import("@cssfn/css-config").Refs<{
     backg: string;
-    elementBoxShadow: (string | number)[][];
+    componentBoxShadow: (string | number)[][];
     '@keyframes active': PropEx.Keyframes;
     '@keyframes passive': PropEx.Keyframes;
     animActive: (string | PropEx.Keyframes)[][];
     animPassive: (string | PropEx.Keyframes)[][];
 }>, cssDecls: import("@cssfn/css-config").Decls<{
     backg: string;
-    elementBoxShadow: (string | number)[][];
+    componentBoxShadow: (string | number)[][];
     '@keyframes active': PropEx.Keyframes;
     '@keyframes passive': PropEx.Keyframes;
     animActive: (string | PropEx.Keyframes)[][];
     animPassive: (string | PropEx.Keyframes)[][];
 }>, cssVals: import("@cssfn/css-config").Vals<{
     backg: string;
-    elementBoxShadow: (string | number)[][];
+    componentBoxShadow: (string | number)[][];
     '@keyframes active': PropEx.Keyframes;
     '@keyframes passive': PropEx.Keyframes;
     animActive: (string | PropEx.Keyframes)[][];

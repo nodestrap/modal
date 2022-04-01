@@ -15,7 +15,6 @@ import type {
 }                           from '@cssfn/css-types'   // ts defs support for cssfn
 import {
     // compositions:
-    compositionOf,
     mainComposition,
     
     
@@ -192,7 +191,7 @@ export const usesDialogLayout = () => {
             
             
             // customize:
-            ...usesGeneralProps(usesPrefixedProps(cssProps, 'element')), // apply general cssProps starting with element***
+            ...usesGeneralProps(usesPrefixedProps(cssProps, 'component')), // apply general cssProps starting with component***
         }),
     });
 };
@@ -329,13 +328,6 @@ export const usesBackdropStates = () => {
     });
 };
 
-export const usesDocumentBodyLayout = () => {
-    return style({
-        // kill the scroll on the body:
-        overflow: 'hidden',
-    });
-};
-
 export const useBackdropSheet = createUseSheet(() => [
     mainComposition(
         imports([
@@ -347,11 +339,6 @@ export const useBackdropSheet = createUseSheet(() => [
             
             // states:
             usesBackdropStates(),
-        ]),
-    ),
-    compositionOf('body',
-        imports([
-            usesDocumentBodyLayout(),
         ]),
     ),
 ], /*sheetId :*/'z26pqrin5i'); // an unique salt for SSR support, ensures the server-side & client-side have the same generated class names
@@ -384,7 +371,7 @@ export const [cssProps, cssDecls, cssVals, cssConfig] = createCssConfig(() => {
     return {
         // backgrounds:
         backg                : 'rgba(0,0,0, 0.5)',
-        elementBoxShadow     : [[0, 0, '10px', 'rgba(0,0,0,0.5)']],
+        componentBoxShadow   : [[0, 0, '10px', 'rgba(0,0,0,0.5)']],
         
         
         
@@ -459,7 +446,7 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     // rest props:
     const {
         // essentials:
-        style,          // moved  to <Dialog>
+     // style,          // remain in <Backdrop> // <Backdrop> should be styled
      // outerRef,       // remain in <Backdrop>
         elmRef,         // moved  to <Dialog>
         
@@ -536,7 +523,13 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     //#region create the portal element and then insert it after the page is fully hydrated
     const [portalElm] = useState(() => isServerSide ? null : document.createElement('div'));
-    const viewportElm = (viewportRef === null) ? null : ((viewportRef === undefined) ? (isServerSide ? null : document.body) : ((viewportRef.constructor === Object) ? (viewportRef as React.RefObject<HTMLElement>)?.current : (viewportRef as HTMLElement)));
+    const viewportElm = (
+        viewportRef
+        ?
+        ((viewportRef.constructor === Object) ? (viewportRef as React.RefObject<HTMLElement>)?.current : (viewportRef as HTMLElement))
+        :
+        (isServerSide ? null : document.body)
+    );
     useEffect(() => {
         // conditions:
         if (!portalElm || !viewportElm) return; // server side => no portal
@@ -577,15 +570,26 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
         
         
         // setups:
-        viewportElm.classList.add(sheet.body);
+        const scrollableElm     = (viewportElm === document.body) ? document.documentElement : viewportElm;
+        const scrollableEvent   = (viewportElm === document.body) ? document                 : viewportElm;
+        const currentScrollTop  = scrollableElm.scrollTop;
+        const currentScrollLeft = scrollableElm.scrollLeft;
+        const handleScroll = (e: Event) => {
+            if (e.target === scrollableEvent) { // only handle click on the viewport, ignores click bubbling from the children
+                scrollableElm.scrollTop  = currentScrollTop;
+                scrollableElm.scrollLeft = currentScrollLeft;
+            } // if
+        };
+        
+        scrollableEvent.addEventListener('scroll', handleScroll);
         
         
         
         // cleanups:
         return () => {
-            viewportElm.classList.remove(sheet.body);
+            scrollableEvent.removeEventListener('scroll', handleScroll);
         };
-    }, [isModal, viewportElm, sheet.body]); // (re)run the setups on every time the isModal & sheet.body changes
+    }, [isModal, viewportElm]); // (re)run the setups on every time the isModal changes
     //#endregion un-scroll the viewport (<body>) while the <Modal> is opened
     
     //#region delays the rendering of portal until the page is fully hydrated
@@ -603,6 +607,50 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     
     
     
+    // handlers:
+    const handleBackdropPress = (e : React.MouseEvent<TElement, MouseEvent> | React.TouchEvent<TElement>, passive = false) => {
+        if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
+            if (!e.defaultPrevented) {
+                if (props.backdropStyle === 'static') {
+                    setExcitedDn(true);
+                    dialogRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
+                    if (!passive) e.preventDefault();
+                } // if
+            } // if
+        } // if
+    };
+    const handleBackdropClick : React.MouseEventHandler<TElement> = (e) => {
+        if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
+            if (!e.defaultPrevented) {
+                if (props.backdropStyle !== 'static') {
+                    if (onActiveChange) {
+                        onActiveChange(false, 'overlay' as unknown as TCloseType);
+                        e.preventDefault();
+                    } // if
+                } // if
+            } // if
+        } // if
+    };
+    const handleBackdropEscape : React.KeyboardEventHandler<TElement> = (e) => {
+        if (!e.defaultPrevented) {
+            if ((e.key === 'Escape') || (e.code === 'Escape')) {
+                if (onActiveChange) {
+                    onActiveChange(false, 'shortcut' as unknown as TCloseType);
+                    e.preventDefault();
+                } // if
+            } // if
+        } // if
+    };
+    const handleContextMenu : React.MouseEventHandler<TElement> = (e) => {
+        if (e.target === e.currentTarget) { // only cancels contextMenu on the overlay, allows at the children
+            if (!e.defaultPrevented) {
+                e.preventDefault();
+            } // if
+        } // if
+    };
+    
+    
+    
     // jsx:
     if (!isHydrated || !portalElm) return <></>; // page is not already hydrated or server side => nothing to render
     
@@ -612,7 +660,6 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     }
     let defaultDialogProps : DialogProps<TElement, TCloseType> & NativeDialogProps = {
         // essentials:
-        style           : style,
         elmRef          : (elm) => {
             setRef(children.props.elmRef, elm);
             
@@ -670,7 +717,6 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
     if (typeof(children.type) === 'string') {
         defaultDialogProps = {
             // essentials:
-            style : defaultDialogProps.style,
             ref   : defaultDialogProps.elmRef,
         };
         if (children.type === 'dialog') {
@@ -698,42 +744,28 @@ export function Modal<TElement extends HTMLElement = HTMLElement, TCloseType = M
             
             // events:
             // watch left click on the overlay only (not at the <Dialog>):
+            onMouseDown={(e) => {
+                props.onMouseDown?.(e);
+                
+                handleBackdropPress(e);
+            }}
+            onTouchStart={(e) => {
+                props.onTouchStart?.(e);
+                
+                handleBackdropPress(e, true);
+            }}
             onClick={(e) => {
                 props.onClick?.(e);
                 
-                
-                
-                if (e.target === e.currentTarget) { // only handle click on the overlay, ignores click bubbling from the children
-                    if (!e.defaultPrevented) {
-                        if (props.backdropStyle !== 'static') {
-                            if (onActiveChange) {
-                                onActiveChange(false, 'overlay' as unknown as TCloseType);
-                                e.preventDefault();
-                            } // if
-                        }
-                        else {
-                            setExcitedDn(true);
-                            dialogRef.current?.focus({ preventScroll: true }); // re-focus to the <Dialog>, so the user able to use [esc] key to close the Modal
-                            e.preventDefault();
-                        } // if static
-                    } // if
-                } // if
+                handleBackdropClick(e);
             }}
+            onContextMenu={handleContextMenu}
             
             // watch [escape key] on the whole Modal, including <Dialog> & <Dialog>'s children:
             onKeyUp={(e) => {
                 props.onKeyUp?.(e);
                 
-                
-                
-                if (!e.defaultPrevented) {
-                    if ((e.key === 'Escape') || (e.code === 'Escape')) {
-                        if (onActiveChange) {
-                            onActiveChange(false, 'shortcut' as unknown as TCloseType);
-                            e.preventDefault();
-                        } // if
-                    } // if
-                } // if
+                handleBackdropEscape(e);
             }}
             
             onAnimationEnd={(e) => {
